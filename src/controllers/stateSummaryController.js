@@ -6,7 +6,7 @@ export const stateSummary = asyncHandler(async (req, res) => {
   const { year, metric, limit, state, district } = req.query;
   const filters = { year, metric, limit, state, district };
   const result = await getStateSummary(filters);
-  return ok(res, { filters, data: result });
+  return ok(res, result);
 });
 
 

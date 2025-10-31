@@ -1,6 +1,5 @@
 import pool from '../config/db.js';
-import { buildWhere } from './queryBuilder.js';
-import { getStateDataColumns } from './schemaService.js';
+import { whereAndParams } from './sqlBuilder.js';
 
 export const getDistrictList = async (filters = {}) => {
   const { sql, params } = buildWhere({ state: filters.state });
@@ -16,29 +15,14 @@ export const getYears = async (filters = {}) => {
 };
 
 export const getPerformance = async (filters = {}) => {
-  const cols = await getStateDataColumns();
-  const sumCols = [
-    'Approved_Labour_Budget','Total_Exp','Material_and_skilled_Wages','Wages',
-    'Number_of_Completed_Works','Number_of_Ongoing_Works','Total_No_of_Works_Takenup',
-    'SC_persondays','ST_persondays','Women_Persondays','Total_Individuals_Worked'
-  ].filter(c => cols.has(c));
-  const avgCols = [
-    'Average_days_of_employment_provided_per_Household','Average_Wage_rate_per_day_per_person',
-    'percentage_payments_gererated_within_15_days'
-  ].filter(c => cols.has(c));
-  const selectParts = [
-    ...sumCols.map(c => `SUM("${c}") as "${c}"`),
-    ...avgCols.map(c => `AVG("${c}") as "${c}"`)
-  ];
-  if (!selectParts.length) return null;
-  const { sql, params } = buildWhere({
+  const { where, params } = whereAndParams({
     year: filters.year,
     district: filters.district,
     state: filters.state
   });
-  const q = `SELECT ${selectParts.join(',\n      ')} FROM state_data ${sql}`;
+  const q = `SELECT * FROM state_data ${where}`;
   const { rows } = await pool.query(q, params);
-  return rows[0] || null;
+  return { filters, query: q, data: rows };
 };
 
 

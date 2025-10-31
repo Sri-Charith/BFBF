@@ -1,11 +1,11 @@
 import pool from '../config/db.js';
 import { toNumber, pct } from '../utils/helpers.js';
-import { buildWhere } from './queryBuilder.js';
+import { whereAndParams } from './sqlBuilder.js';
 import { getStateDataColumns } from './schemaService.js';
 
 export const getInsights = async (filters = {}) => {
   const cols = await getStateDataColumns();
-  const { sql, params } = buildWhere({ year: filters.year, district: filters.district, state: filters.state });
+  const { where, params } = whereAndParams({ year: filters.year, district: filters.district, state: filters.state });
   const sumCols = [
     'Approved_Labour_Budget','Total_Exp','Total_No_of_Works_Takenup','Number_of_Completed_Works',
     'SC_persondays','ST_persondays','Women_Persondays','Total_Individuals_Worked'
@@ -15,7 +15,7 @@ export const getInsights = async (filters = {}) => {
     ...sumCols.map(c => `SUM("${c}") as "${c}"`),
     ...avgCols.map(c => `AVG("${c}") as "${c}"`)
   ];
-  const q = `SELECT ${selectParts.join(',\n      ')} FROM state_data ${sql}`;
+  const q = `SELECT ${selectParts.join(',\n      ')} FROM state_data ${where}`;
   const { rows } = await pool.query(q, params);
   const d = rows[0] || {};
   const approved = toNumber(d.Approved_Labour_Budget);
@@ -35,7 +35,7 @@ export const getInsights = async (filters = {}) => {
     payment_timeliness_pct: payment15
   };
 
-  return { inputs: d, insights };
+  return { filters, query: q, data: { inputs: d, insights } };
 };
 
 
