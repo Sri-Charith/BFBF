@@ -1,9 +1,9 @@
 import { Router } from 'express';
-import { getPerformance } from '../controllers/performanceController.js';
+import { getPerformanceController } from '../controllers/performanceController.js';
 
 const router = Router();
 
-router.get('/', getPerformance);
+router.get('/', getPerformanceController);
 
 export default router;
 

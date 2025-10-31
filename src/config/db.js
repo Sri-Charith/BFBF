@@ -9,10 +9,17 @@ import { Pool } from 'pg';
 // Ensure .env at backend/.env is loaded even if CWD differs
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+// First try explicit backend/.env path
 loadEnv({ path: path.resolve(__dirname, '../../.env') });
+// Fallback: try CWD .env if not loaded
+if (!process.env.DATABASE_URL) {
+  loadEnv();
+}
 
 // Check if the DATABASE_URL is in the .env file
 if (!process.env.DATABASE_URL) {
+  // eslint-disable-next-line no-console
+  console.error('DATABASE_URL is not set. Ensure backend/.env has a line like:\nDATABASE_URL=postgresql://...');
   throw new Error('DATABASE_URL is not set. Please define it in your .env file');
 }
 

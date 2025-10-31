@@ -1,9 +1,9 @@
 import { Router } from 'express';
-import { compare } from '../controllers/compareController.js';
+import { compareController } from '../controllers/compareController.js';
 
 const router = Router();
 
-router.get('/', compare);
+router.get('/', compareController);
 
 export default router;
 

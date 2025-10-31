@@ -3,10 +3,11 @@ import { ok, badRequest } from '../utils/response.js';
 import { getTrend } from '../services/trendService.js';
 
 export const trend = asyncHandler(async (req, res) => {
-  const { district, metric } = req.query;
-  if (!district || !metric) return badRequest(res, 'district and metric are required');
-  const series = await getTrend(district, metric);
-  return ok(res, { district, metric, series });
+  const { metric, district, state } = req.query;
+  if (!metric) return badRequest(res, 'metric is required');
+  const filters = { metric, district, state };
+  const data = await getTrend(filters);
+  return ok(res, { filters, data });
 });
 
 

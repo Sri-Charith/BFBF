@@ -1,12 +1,12 @@
 import asyncHandler from '../middleware/asyncHandler.js';
-import { ok, badRequest } from '../utils/response.js';
+import { ok } from '../utils/response.js';
 import { getInsights } from '../services/insightService.js';
 
 export const insights = asyncHandler(async (req, res) => {
-  const { district, year } = req.query;
-  if (!district || !year) return badRequest(res, 'district and year are required');
-  const result = await getInsights(district, year);
-  return ok(res, { district, year, ...result });
+  const { year, district, state } = req.query;
+  const filters = { year, district, state };
+  const result = await getInsights(filters);
+  return ok(res, { filters, data: result });
 });
 
 

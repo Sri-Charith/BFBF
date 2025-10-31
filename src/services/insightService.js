@@ -1,22 +1,22 @@
 import pool from '../config/db.js';
 import { toNumber, pct } from '../utils/helpers.js';
+import { buildWhere } from './queryBuilder.js';
+import { getStateDataColumns } from './schemaService.js';
 
-export const getInsights = async (district, year) => {
-  const sql = `
-    SELECT
-      SUM("Approved_Labour_Budget") as "Approved_Labour_Budget",
-      SUM("Total_Exp") as "Total_Exp",
-      SUM("Total_No_of_Works_Takenup") as "Total_No_of_Works_Takenup",
-      SUM("Number_of_Completed_Works") as "Number_of_Completed_Works",
-      SUM(COALESCE("SC_persondays",0)) as "SC_persondays",
-      SUM(COALESCE("ST_persondays",0)) as "ST_persondays",
-      SUM(COALESCE("Women_Persondays",0)) as "Women_Persondays",
-      SUM(COALESCE("Total_Individuals_Worked",0)) as "Total_Individuals_Worked",
-      AVG("percentage_payments_gererated_within_15_days") as "percentage_payments_gererated_within_15_days"
-    FROM state_data
-    WHERE "district_name" = $1 AND "fin_year" = $2
-  `;
-  const { rows } = await pool.query(sql, [district, year]);
+export const getInsights = async (filters = {}) => {
+  const cols = await getStateDataColumns();
+  const { sql, params } = buildWhere({ year: filters.year, district: filters.district, state: filters.state });
+  const sumCols = [
+    'Approved_Labour_Budget','Total_Exp','Total_No_of_Works_Takenup','Number_of_Completed_Works',
+    'SC_persondays','ST_persondays','Women_Persondays','Total_Individuals_Worked'
+  ].filter(c => cols.has(c));
+  const avgCols = [ 'percentage_payments_gererated_within_15_days' ].filter(c => cols.has(c));
+  const selectParts = [
+    ...sumCols.map(c => `SUM("${c}") as "${c}"`),
+    ...avgCols.map(c => `AVG("${c}") as "${c}"`)
+  ];
+  const q = `SELECT ${selectParts.join(',\n      ')} FROM state_data ${sql}`;
+  const { rows } = await pool.query(q, params);
   const d = rows[0] || {};
   const approved = toNumber(d.Approved_Labour_Budget);
   const exp = toNumber(d.Total_Exp);
