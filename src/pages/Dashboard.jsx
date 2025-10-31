@@ -15,26 +15,20 @@ import BarChartCard from '../components/charts/BarChartCard.jsx';
 import PieChartCard from '../components/charts/PieChartCard.jsx';
 import GaugeCard from '../components/charts/GaugeCard.jsx';
 import AreaChartCard from '../components/charts/AreaChartCard.jsx';
-import HeatmapCard from '../components/charts/HeatmapCard.jsx';
+import ComposedChartCard from '../components/charts/ComposedChartCard.jsx';
 import Loader from '../components/Loader.jsx';
-import { getDashboard, getTrend, getDistricts, getYears, getInsights, getPerformance } from '../api/metricsAPI';
+import { getDashboard, getTrendsMulti, getDistricts, getYears, getInsights, getPerformance } from '../api/metricsAPI';
 
 const DEFAULT_DISTRICT = 'Siddipet';
 const DEFAULT_YEAR = '2025-2026';
 const MONTHS = ['All','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec','Jan','Feb','Mar'];
 
-const HEATMAP_METRICS = [
+// Metrics for composed chart only (faster loading)
+const COMPOSED_CHART_METRICS = [
   'Total_Exp',
   'Wages',
   'Material_and_skilled_Wages',
-  'Number_of_Completed_Works',
-  'Number_of_Ongoing_Works',
-  'Average_days_of_employment_provided_per_Household',
-  'percentage_payments_gererated_within_15_days',
-  'percent_of_Expenditure_on_Agriculture_Allied_Works',
-  'percent_of_NRM_Expenditure',
-  'percent_of_Category_B_Works',
-  'Differently_abled_persons_worked'
+  'Number_of_Completed_Works'
 ];
 
 const METRIC_LABELS = {
@@ -66,7 +60,7 @@ export default function Dashboard() {
   const [pieData, setPieData] = useState([]);
   const [barData, setBarData] = useState([]);
   const [areaData, setAreaData] = useState([]);
-  const [heatmap, setHeatmap] = useState({ rows: [], cols: [], values: [] });
+  const [composedChartData, setComposedChartData] = useState([]);
   const [performanceRow, setPerformanceRow] = useState({});
   const [insights, setInsights] = useState({});
 
@@ -91,12 +85,15 @@ export default function Dashboard() {
   const loadData = async (selDistrict, selYear) => {
     setLoading(true);
     try {
-      const [dash, ins, perf, trendAll] = await Promise.all([
+      const [dash, ins, perf, trendMultiResult] = await Promise.all([
         getDashboard({ districtId: selDistrict, year: selYear }),
         getInsights({ district: selDistrict, year: selYear }),
         getPerformance({ district: selDistrict, year: selYear }),
-        Promise.all(HEATMAP_METRICS.map(m => getTrend({ metric: m, district: selDistrict }).then(r => ({ metric: m, data: r?.data || r || [] })))).catch(() => [])
+        getTrendsMulti({ metrics: COMPOSED_CHART_METRICS, district: selDistrict }).catch(() => ({ data: [] }))
       ]);
+
+      // Transform multi-trend result to match expected format
+      const trendAll = trendMultiResult?.data || [];
 
       const metrics = dash?.metrics || dash?.data?.metrics || [];
       setCards(metrics.map(m => ({
@@ -130,22 +127,24 @@ export default function Dashboard() {
 
       setAreaData(trSeries.map(r => ({ fin_year: r.fin_year ?? r['fin_year'], Wages: Number(r.value || 0) })));
 
-      // Build heatmap: rows=metrics, cols=years, values normalized per-metric 0..1
+      // Build composed chart data: merge all metrics by year
       const seriesByMetric = Array.isArray(trendAll) ? trendAll : [];
       const allYears = Array.from(new Set(seriesByMetric.flatMap(s => (s.data || []).map(d => d.fin_year ?? d['fin_year'])))).sort();
-      const cols = allYears;
-      const rows = HEATMAP_METRICS.map(m => METRIC_LABELS[m] || m);
-      const values = HEATMAP_METRICS.map((metric) => {
-        const s = seriesByMetric.find(x => x.metric === metric)?.data || [];
-        const map = new Map(s.map(d => [String(d.fin_year ?? d['fin_year']), Number(d.value || 0)]));
-        const rawVals = cols.map(y => (map.has(String(y)) ? map.get(String(y)) : NaN));
-        const finite = rawVals.filter((v) => Number.isFinite(v));
-        const min = finite.length ? Math.min(...finite) : 0;
-        const max = finite.length ? Math.max(...finite) : 1;
-        const range = max - min || 1;
-        return rawVals.map(v => ({ raw: Number.isFinite(v) ? v : NaN, norm: Number.isFinite(v) ? (v - min) / range : 0 }));
-      });
-      setHeatmap({ rows, cols, values });
+      
+      // Create maps for each metric
+      const totalExpMap = new Map((seriesByMetric.find(s => s.metric === 'Total_Exp')?.data || []).map(d => [String(d.fin_year ?? d['fin_year']), Number(d.value || 0)]));
+      const wagesMap = new Map((seriesByMetric.find(s => s.metric === 'Wages')?.data || []).map(d => [String(d.fin_year ?? d['fin_year']), Number(d.value || 0)]));
+      const materialWagesMap = new Map((seriesByMetric.find(s => s.metric === 'Material_and_skilled_Wages')?.data || []).map(d => [String(d.fin_year ?? d['fin_year']), Number(d.value || 0)]));
+      const completedWorksMap = new Map((seriesByMetric.find(s => s.metric === 'Number_of_Completed_Works')?.data || []).map(d => [String(d.fin_year ?? d['fin_year']), Number(d.value || 0)]));
+      
+      const composedData = allYears.map(year => ({
+        fin_year: year,
+        Total_Exp: totalExpMap.get(String(year)) || 0,
+        Wages: wagesMap.get(String(year)) || 0,
+        Material_Wages: materialWagesMap.get(String(year)) || 0,
+        Completed_Works: completedWorksMap.get(String(year)) || 0
+      }));
+      setComposedChartData(composedData);
     } finally {
       setLoading(false);
     }
@@ -243,13 +242,10 @@ export default function Dashboard() {
       </Box>
 
       <Box sx={{ mb: 2 }}>
-        <HeatmapCard
-          title={`Metric Intensity by Year — ${String(district).replaceAll('_',' ')}`}
-          subtitle={"Darker cells indicate relatively higher values within each metric across years."}
-          rows={heatmap.rows}
-          cols={heatmap.cols}
-          values={heatmap.values}
-          formatValue={(v) => Number.isFinite(v) ? v.toLocaleString() : '—'}
+        <ComposedChartCard
+          title={`Key Metrics Trend — ${String(district).replaceAll('_',' ')}`}
+          data={composedChartData}
+          xKey="fin_year"
         />
       </Box>
 

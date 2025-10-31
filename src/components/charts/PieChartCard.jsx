@@ -11,7 +11,7 @@ const PieChartCard = ({ title, data, dataKey, nameKey }) => (
   <Card elevation={2} sx={{ minHeight: 320 }}>
     <CardContent sx={{ display: 'flex', flexDirection: 'column' }}>
       <Typography variant="subtitle1" sx={{ mb: 2 }}>{title}</Typography>
-      <Box sx={{ width: '100%', height: 260 }}>
+      <Box sx={{ width: '100%', minWidth: 0, height: 260 }}>
         <ResponsiveContainer width="100%" height="100%">
           <PieChart margin={{ top: 8, right: 8, bottom: 8, left: 8 }}>
             <Pie data={data} dataKey={dataKey} nameKey={nameKey} outerRadius="80%" fill="#8884d8" label>

@@ -9,7 +9,7 @@ const AreaChartCard = ({ title, data, xKey, yKey, color }) => (
   <Card elevation={2} sx={{ minHeight: 320 }}>
     <CardContent sx={{ display: 'flex', flexDirection: 'column' }}>
       <Typography variant="subtitle1" sx={{ mb: 2 }}>{title}</Typography>
-      <Box sx={{ width: '100%', height: 260 }}>
+      <Box sx={{ width: '100%', minWidth: 0, height: 260 }}>
         <ResponsiveContainer width="100%" height="100%">
           <AreaChart data={data} margin={{ top: 8, right: 16, bottom: 8, left: 8 }}>
             <defs>
