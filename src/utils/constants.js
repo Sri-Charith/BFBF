@@ -2,6 +2,7 @@ export const METRIC_CATEGORIES = {
   Employment: [
     'Average_days_of_employment_provided_per_Household',
     'Total_Individuals_Worked',
+    'Total_Households_Worked',
     'Number_of_Completed_Works',
     'Number_of_Ongoing_Works',
     'Total_No_of_Works_Takenup'
@@ -32,5 +33,14 @@ export const AVG_METRICS = new Set([
 export const ALLOWED_METRICS = new Set(
   Array.from(new Set(Object.values(METRIC_CATEGORIES).flat()))
 );
+
+// Default 5 KPIs for dashboard
+export const DEFAULT_DASHBOARD_METRICS = [
+  'Total_Exp',
+  'Average_Wage_rate_per_day_per_person',
+  'Number_of_Completed_Works',
+  'Total_Households_Worked',
+  'Average_days_of_employment_provided_per_Household'
+];
 
 
