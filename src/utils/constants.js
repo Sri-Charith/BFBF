@@ -16,18 +16,27 @@ export const METRIC_CATEGORIES = {
   Inclusivity: [
     'SC_persondays',
     'ST_persondays',
-    'Women_Persondays'
+    'Women_Persondays',
+    'Differently_abled_persons_worked'
   ],
   Efficiency: [
     'Average_Wage_rate_per_day_per_person',
     'percentage_payments_gererated_within_15_days'
+  ],
+  Composition: [
+    'percent_of_Expenditure_on_Agriculture_Allied_Works',
+    'percent_of_NRM_Expenditure',
+    'percent_of_Category_B_Works'
   ]
 };
 
 export const AVG_METRICS = new Set([
   'Average_days_of_employment_provided_per_Household',
   'Average_Wage_rate_per_day_per_person',
-  'percentage_payments_gererated_within_15_days'
+  'percentage_payments_gererated_within_15_days',
+  'percent_of_Expenditure_on_Agriculture_Allied_Works',
+  'percent_of_NRM_Expenditure',
+  'percent_of_Category_B_Works'
 ]);
 
 export const ALLOWED_METRICS = new Set(

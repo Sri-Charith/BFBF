@@ -1,0 +1,55 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "./src/generated/prisma"
+}
+
+model playing_with_neon {
+  id    Int    @id @default(autoincrement())
+  name  String
+  value Float
+}
+
+model state_data {
+  id                                                    Int      @id @default(autoincrement())
+  fin_year                                              String?  @db.VarChar(10)
+  month                                                 String?  @db.VarChar(20)
+  state_code                                            Int?
+  state_name                                            String?
+  district_code                                         Int?
+  district_name                                         String?
+  Approved_Labour_Budget                                BigInt?
+  Average_Wage_rate_per_day_per_person                  Decimal? @db.Decimal(18, 6)
+  Average_days_of_employment_provided_per_Household     Int?
+  Differently_abled_persons_worked                      Int?
+  Material_and_skilled_Wages                            Decimal? @db.Decimal(18, 6)
+  Number_of_Completed_Works                             Int?
+  Number_of_GPs_with_NIL_exp                            Int?
+  Number_of_Ongoing_Works                               Int?
+  Persondays_of_Central_Liability_so_far                BigInt?
+  SC_persondays                                         BigInt?
+  SC_workers_against_active_workers                     Int?
+  ST_persondays                                         BigInt?
+  ST_workers_against_active_workers                     Int?
+  Total_Adm_Expenditure                                 Decimal? @db.Decimal(18, 6)
+  Total_Exp                                             Decimal? @db.Decimal(18, 6)
+  Total_Households_Worked                               Int?
+  Total_Individuals_Worked                              Int?
+  Total_No_of_Active_Job_Cards                          Int?
+  Total_No_of_Active_Workers                            Int?
+  Total_No_of_HHs_completed_100_Days_of_Wage_Employment Int?
+  Total_No_of_JobCards_issued                           Int?
+  Total_No_of_Workers                                   Int?
+  Total_No_of_Works_Takenup                             Int?
+  Wages                                                 Decimal? @db.Decimal(18, 6)
+  Women_Persondays                                      BigInt?
+  percent_of_Category_B_Works                           Decimal? @db.Decimal(5, 2)
+  percent_of_Expenditure_on_Agriculture_Allied_Works    Decimal? @db.Decimal(5, 2)
+  percent_of_NRM_Expenditure                            Decimal? @db.Decimal(5, 2)
+  percentage_payments_gererated_within_15_days          Decimal? @db.Decimal(5, 2)
+  Remarks                                               String?
+}
