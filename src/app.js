@@ -1,5 +1,6 @@
 import express from 'express';
 import cors from 'cors';
+import compression from 'compression';
 import districtRoutes from './routes/districtRoutes.js';
 import yearRoutes from './routes/yearRoutes.js';
 import metricRoutes from './routes/metricRoutes.js';
@@ -14,8 +15,11 @@ import errorHandler from './utils/errorHandler.js';
 
 const app = express();
 
+// Middleware setup
 app.use(cors());
-app.use(express.json());
+app.use(compression()); // Enable gzip compression for responses
+app.use(express.json({ limit: '10mb' })); // Add body size limit
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
 app.get('/', (req, res) => {
   res.send({ message: 'Welcome to the state_data API' });

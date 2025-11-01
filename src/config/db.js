@@ -17,26 +17,61 @@ if (!process.env.DATABASE_URL) {
   throw new Error('DATABASE_URL missing');
 }
 
+// Don't use raw pg Pool if using Accelerate - use Prisma instead
+const useAccelerate = process.env.PRISMA_ACCELERATE_URL || 
+  (process.env.DATABASE_URL && process.env.DATABASE_URL.startsWith('prisma://'));
+
 // ✅ Create pooled connection (optimized for Neon)
+// Note: If using Prisma Accelerate, prefer Prisma client over raw pg Pool
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
   ssl: { rejectUnauthorized: false },
   max: 10, // ✅ only 10 concurrent clients to reduce Neon connection overhead
   idleTimeoutMillis: 30000, // ✅ close idle clients after 30s
-  connectionTimeoutMillis: 5000, // ✅ timeout if DB doesn’t respond
+  connectionTimeoutMillis: 5000, // ✅ timeout if DB doesn't respond
 });
 
 // ✅ Simple query wrapper (for better logging + debugging)
-pool.on('connect', () => console.log('✅ Connected to Neon DB'));
+pool.on('connect', () => {
+  if (!useAccelerate) {
+    console.log('✅ Connected to Neon DB (direct connection)');
+  }
+});
 pool.on('error', (err) => console.error('❌ Unexpected DB error:', err));
 
-export default pool;
-// Keep the Neon connection warm to avoid cold start delays
-setInterval(async () => {
-  try {
-    await pool.query('SELECT 1');
-    console.log('🔥 Keep-alive ping sent to Neon');
-  } catch (err) {
-    console.error('⚠️ Keep-alive ping failed:', err.message);
+// Keep-alive function (only start if not using Accelerate)
+let keepAliveInterval = null;
+
+if (!useAccelerate) {
+  // Start keep-alive only after module is fully loaded
+  if (typeof setImmediate !== 'undefined') {
+    setImmediate(() => {
+      keepAliveInterval = setInterval(async () => {
+        try {
+          await pool.query('SELECT 1');
+          if (process.env.NODE_ENV === 'development') {
+            console.log('🔥 Keep-alive ping sent to Neon');
+          }
+        } catch (err) {
+          console.error('⚠️ Keep-alive ping failed:', err.message);
+        }
+      }, 2 * 60 * 1000); // every 2 minutes
+    });
   }
-}, 2 * 60 * 1000); // every 2 minutes
+}
+
+// Graceful shutdown
+if (typeof process !== 'undefined') {
+  const cleanup = async () => {
+    if (keepAliveInterval) {
+      clearInterval(keepAliveInterval);
+    }
+    await pool.end();
+  };
+
+  process.on('SIGINT', cleanup);
+  process.on('SIGTERM', cleanup);
+  process.on('beforeExit', cleanup);
+}
+
+export default pool;

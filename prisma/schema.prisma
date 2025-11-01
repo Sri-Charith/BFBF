@@ -52,4 +52,17 @@ model state_data {
   percent_of_NRM_Expenditure                            Decimal? @db.Decimal(5, 2)
   percentage_payments_gererated_within_15_days          Decimal? @db.Decimal(5, 2)
   Remarks                                               String?
+
+  @@index([district_name, fin_year], name: "idx_state_data_district_year")
+  @@index([state_name, fin_year], name: "idx_state_data_state_year")
+  @@index([fin_year], name: "idx_state_data_year")
+  @@map("state_data")
+}
+
+model user_preferences {
+  user_id   String   @id
+  metrics   String[]
+  updated_at DateTime @default(now()) @updatedAt
+
+  @@map("user_preferences")
 }

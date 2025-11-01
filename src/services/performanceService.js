@@ -72,16 +72,7 @@ export const getPerformance = async (filters = {}) => {
     LIMIT 200
   `;
 
-  console.time('getPerformance');
-  console.log('Performance query:', q);
-  console.log('Performance params:', params);
   const { rows } = await pool.query(q, params);
-  console.timeEnd('getPerformance');
-  console.log('Performance rows returned:', rows.length);
-  if (rows.length > 0) {
-    console.log('First row keys:', Object.keys(rows[0]));
-    console.log('First row sample:', JSON.stringify(rows[0], null, 2).substring(0, 500));
-  }
 
   // Convert BigInt and Decimal values to numbers/strings for JSON serialization
   const processedRows = rows.map(row => {
@@ -106,11 +97,6 @@ export const getPerformance = async (filters = {}) => {
     }
     return processed;
   });
-
-  console.log('Processed rows count:', processedRows.length);
-  if (processedRows.length > 0) {
-    console.log('Processed first row keys:', Object.keys(processedRows[0]));
-  }
 
   return processedRows;
 };
